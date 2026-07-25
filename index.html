@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f3f0e8">
+  <title>Daily Rhythm</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div class="mark" aria-hidden="true"><span></span></div>
+      <p class="eyebrow">DAILY RHYTHM</p>
+      <h1 id="greeting">A quiet beginning.</h1>
+      <div class="date-row">
+        <button id="prev" aria-label="Previous day">←</button>
+        <button id="dateButton" class="date-button"><span id="weekday"></span><strong id="date"></strong></button>
+        <button id="next" aria-label="Next day">→</button>
+      </div>
+      <input id="picker" type="date" aria-label="Choose date">
+      <div class="progress-wrap">
+        <div class="progress-copy"><span>today’s balance</span><span id="count">0 / 9</span></div>
+        <div class="track"><div id="bar"></div></div>
+      </div>
+    </header>
+
+    <section class="routine" data-period="morning">
+      <div class="section-head"><span>01</span><div><p>MORNING</p><h2>Begin with intention</h2></div></div>
+      <div class="tasks" id="morning"></div>
+    </section>
+    <section class="routine" data-period="day">
+      <div class="section-head"><span>02</span><div><p>DAY</p><h2>Move through lightly</h2></div></div>
+      <div class="tasks" id="day"></div>
+    </section>
+    <section class="routine" data-period="evening">
+      <div class="section-head"><span>03</span><div><p>EVENING</p><h2>Return to stillness</h2></div></div>
+      <div class="tasks" id="evening"></div>
+    </section>
+
+    <footer><span>日々</span><p>Small rituals, repeated softly.</p><button id="reset">reset day</button></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
