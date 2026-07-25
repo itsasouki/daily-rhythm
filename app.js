@@ -49,6 +49,28 @@ function move(n){selected.setDate(selected.getDate()+n);const now=new Date();if(
 document.getElementById('prev').onclick=()=>move(-1);document.getElementById('next').onclick=()=>move(1);
 const picker=document.getElementById('picker');document.getElementById('dateButton').onclick=()=>picker.showPicker();
 picker.onchange=()=>{const [y,m,d]=picker.value.split('-');selected=new Date(y,m-1,d);if(selected>new Date())selected=new Date();render()};
+function archiveData(){
+  const total=Object.values(routines).flat().length, today=new Date(), rows=[];
+  for(let i=27;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;let count=0;try{count=JSON.parse(localStorage.getItem('rhythm:'+k)||'[]').length}catch(e){}rows.push({d,k,count,pct:count/total*100})}
+  return rows;
+}
+function renderArchive(){
+  const rows=archiveData(), active=rows.filter(x=>x.count>0), avg=active.length?active.reduce((s,x)=>s+x.pct,0)/active.length:0;
+  const prior=rows.slice(0,14), recent=rows.slice(14), mean=a=>a.reduce((s,x)=>s+x.pct,0)/a.length, delta=mean(recent)-mean(prior);
+  document.getElementById('average').textContent=Math.round(avg)+'%';
+  document.getElementById('days').textContent=active.length;
+  document.getElementById('change').textContent=active.length<2?'—':`${delta>=0?'+':''}${Math.round(delta)}%`;
+  document.getElementById('archiveRange').textContent=rows[0].d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' — '+rows[27].d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('chart').innerHTML=rows.map((x,i)=>`<span class="chart-bar ${x.count?'':'zero'} ${i===27?'today':''}" style="--h:${Math.max(x.pct,1)}%" title="${x.k}: ${x.count}/9"></span>`).join('');
+  let text='Your rhythm will appear here as you complete each day.';
+  if(active.length>=2) text=delta>5?'Your recent rhythm is strengthening. Keep the practice gentle and consistent.':delta < -5?'Your pace has softened recently. Begin again with one small ritual.':'Your practice is steady. Consistency is becoming its own quiet form of progress.';
+  document.getElementById('insightText').textContent=text;
+}
+function openArchive(){renderArchive();document.getElementById('archive').classList.add('open');document.getElementById('archive').setAttribute('aria-hidden','false');document.body.classList.add('archive-visible')}
+function closeArchive(){document.getElementById('archive').classList.remove('open');document.getElementById('archive').setAttribute('aria-hidden','true');document.body.classList.remove('archive-visible')}
+document.getElementById('archiveOpen').onclick=openArchive;
+document.getElementById('archiveClose').onclick=closeArchive;
 document.getElementById('dailyWord').addEventListener('input',e=>localStorage.setItem('word:'+key(),e.target.value.trim()));
+
 document.getElementById('reset').onclick=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
 render();
