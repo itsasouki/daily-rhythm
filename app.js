@@ -1,3 +1,7 @@
+const SUPABASE_URL='https://jswpezwabcspzxmoetkl.supabase.co';
+const SUPABASE_KEY='sb_publishable_k3WtzSxCrX2X-WDkcNowGg_Tm70rO2a';
+const cloud=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let cloudUser=null,syncTimer=null;
 const routines={morning:['protein','meditate','journal','stretch'],day:['movement','music','water'],evening:['stretch','read']};
 const quotes=[
   ['The most creative act you will ever undertake is the act of creating yourself.','Deepak Chopra'],
@@ -19,7 +23,7 @@ let selected=new Date();
 const pad=n=>String(n).padStart(2,'0');
 const key=()=>`${selected.getFullYear()}-${pad(selected.getMonth()+1)}-${pad(selected.getDate())}`;
 const saved=()=>JSON.parse(localStorage.getItem('rhythm:'+key())||'[]');
-function setSaved(v){localStorage.setItem('rhythm:'+key(),JSON.stringify(v))}
+function setSaved(v){localStorage.setItem('rhythm:'+key(),JSON.stringify(v));queueSync()}
 function isToday(){const n=new Date();return selected.toDateString()===n.toDateString()}
 function render(){
   const done=saved();
@@ -70,7 +74,7 @@ function openArchive(){renderArchive();document.getElementById('archive').classL
 function closeArchive(){document.getElementById('archive').classList.remove('open');document.getElementById('archive').setAttribute('aria-hidden','true');document.body.classList.remove('archive-visible')}
 document.getElementById('archiveOpen').onclick=openArchive;
 document.getElementById('archiveClose').onclick=closeArchive;
-document.getElementById('dailyWord').addEventListener('input',e=>localStorage.setItem('word:'+key(),e.target.value.trim()));
+document.getElementById('dailyWord').addEventListener('input',e=>{localStorage.setItem('word:'+key(),e.target.value.trim());queueSync()});
 
 function allHistory(){
   const total=Object.values(routines).flat().length, keys=[];
@@ -97,6 +101,25 @@ async function shareMarkdown(text,name){
 document.getElementById('exportDay').onclick=()=>shareMarkdown(dayMarkdown(key()),`daily-rhythm-${key()}.md`);
 document.getElementById('exportHistory').onclick=()=>shareMarkdown(historyMarkdown(),`daily-rhythm-history-${key()}.md`);
 
-document.getElementById('reset').onclick=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
+async function pushDay(k=key()){
+  if(!cloudUser)return;let completed=[];try{completed=JSON.parse(localStorage.getItem('rhythm:'+k)||'[]')}catch(e){}
+  await cloud.from('daily_rhythm_days').upsert({user_id:cloudUser.id,day:k,word:localStorage.getItem('word:'+k)||'',completed,updated_at:new Date().toISOString()});
+}
+function queueSync(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushDay(),600)}
+async function mergeCloud(){
+  const {data,error}=await cloud.from('daily_rhythm_days').select('day,word,completed,updated_at');if(error){showStatus(error.message);return}
+  (data||[]).forEach(x=>{const local=localStorage.getItem('rhythm:'+x.day);if(!local||JSON.parse(local).length===0)localStorage.setItem('rhythm:'+x.day,JSON.stringify(x.completed||[]));if(!localStorage.getItem('word:'+x.day)&&x.word)localStorage.setItem('word:'+x.day,x.word)});
+  for(const row of allHistory())await pushDay(row.k);render();renderAccount();
+}
+function showStatus(t){document.getElementById('authStatus').textContent=t}
+function renderAccount(){const signed=!!cloudUser;document.getElementById('accountTitle').innerHTML=signed?'Your rhythm<br>is connected.':'Carry your rhythm<br>between devices.';document.getElementById('accountCopy').textContent=signed?cloudUser.email:'Sign in with a private email link. Your existing history will merge into your account.';document.getElementById('authForm').hidden=signed;document.getElementById('signOut').hidden=!signed;document.getElementById('accountOpen').textContent=signed?'synced':'sync'}
+function openAccount(){document.getElementById('account').classList.add('open');document.getElementById('account').setAttribute('aria-hidden','false');renderAccount()}
+function closeAccount(){document.getElementById('account').classList.remove('open');document.getElementById('account').setAttribute('aria-hidden','true')}
+document.getElementById('accountOpen').onclick=openAccount;document.getElementById('accountClose').onclick=closeAccount;
+document.getElementById('authForm').onsubmit=async e=>{e.preventDefault();showStatus('Sending…');const email=document.getElementById('authEmail').value;const {error}=await cloud.auth.signInWithOtp({email,options:{emailRedirectTo:'https://itsasouki.github.io/daily-rhythm/'}});showStatus(error?error.message:'Check your email for the private sign-in link.')};
+document.getElementById('signOut').onclick=async()=>{await cloud.auth.signOut();cloudUser=null;renderAccount();showStatus('Signed out.')};
+cloud.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderAccount();if(cloudUser&&(event==='SIGNED_IN'||event==='INITIAL_SESSION'))setTimeout(mergeCloud,0)});
+
+=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 render();

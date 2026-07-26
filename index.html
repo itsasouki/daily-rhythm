@@ -18,6 +18,7 @@
       <div class="mark" aria-hidden="true"><span></span></div>
       <p class="eyebrow">DAILY RHYTHM</p>
       <button id="archiveOpen" class="archive-open">archive</button>
+      <button id="accountOpen" class="account-open">sync</button>
       <h1 id="greeting">A quiet beginning.</h1>
       <div class="date-row">
         <button id="prev" aria-label="Previous day">←</button>
@@ -67,6 +68,10 @@
     <section class="insight"><p class="eyebrow">REFLECTION</p><p id="insightText"></p></section>
     <section class="exports"><p class="eyebrow">TAKE IT WITH YOU</p><div><button id="exportDay">export selected day <span>↓</span></button><button id="exportHistory">export full history <span>↓</span></button></div><p>Markdown files stay private until you choose where to share them.</p></section>
   </aside>
+  <aside id="account" class="account" aria-hidden="true">
+    <div class="account-card"><button id="accountClose" aria-label="Close">×</button><p class="eyebrow">CLOUD MEMORY</p><h2 id="accountTitle">Carry your rhythm<br>between devices.</h2><p id="accountCopy">Sign in with a private email link. Your existing history will merge into your account.</p><form id="authForm"><input id="authEmail" type="email" placeholder="your@email.com" required autocomplete="email"><button type="submit">send sign-in link</button></form><p id="authStatus"></p><button id="signOut" hidden>sign out</button></div>
+  </aside>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>
 </html>
