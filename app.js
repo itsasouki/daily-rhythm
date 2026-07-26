@@ -72,5 +72,30 @@ document.getElementById('archiveOpen').onclick=openArchive;
 document.getElementById('archiveClose').onclick=closeArchive;
 document.getElementById('dailyWord').addEventListener('input',e=>localStorage.setItem('word:'+key(),e.target.value.trim()));
 
+function allHistory(){
+  const total=Object.values(routines).flat().length, keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('rhythm:'))keys.push(k.slice(7))}
+  return [...new Set(keys)].sort().map(k=>{let done=[];try{done=JSON.parse(localStorage.getItem('rhythm:'+k)||'[]')}catch(e){}return {k,done,count:done.length,pct:Math.round(done.length/total*100),word:localStorage.getItem('word:'+k)||''}});
+}
+function quoteForDate(k){const [y,m,d]=k.split('-').map(Number),n=Math.floor(new Date(y,m-1,d).getTime()/86400000);return quotes[Math.abs(n)%quotes.length]}
+function dayMarkdown(k){
+  let done=[];try{done=JSON.parse(localStorage.getItem('rhythm:'+k)||'[]')}catch(e){}
+  const word=localStorage.getItem('word:'+k)||'Not set',q=quoteForDate(k),total=Object.values(routines).flat().length;
+  let md=`# Daily Rhythm — ${k}\n\n**Word for the day:** ${word}\n\n> ${q[0]}\n> — ${q[1]}\n\n**Completion:** ${done.length}/${total} (${Math.round(done.length/total*100)}%)\n`;
+  Object.entries(routines).forEach(([period,items])=>{md+=`\n## ${period[0].toUpperCase()+period.slice(1)}\n`;items.forEach((name,i)=>md+=`- [${done.includes(`${period}-${i}`)?'x':' '}] ${name}\n`)});return md;
+}
+function historyMarkdown(){
+  const rows=allHistory(),active=rows.filter(x=>x.count>0),avg=active.length?Math.round(active.reduce((s,x)=>s+x.pct,0)/active.length):0;
+  let md=`# Daily Rhythm — History\n\n**Recorded days:** ${active.length}  \n**Daily average:** ${avg}%\n\n| Date | Word | Completed | Score |\n|---|---|---:|---:|\n`;
+  rows.slice().reverse().forEach(x=>md+=`| ${x.k} | ${x.word.replace(/\|/g,'\\|')||'—'} | ${x.count}/9 | ${x.pct}% |\n`);return md;
+}
+async function shareMarkdown(text,name){
+  const file=new File([text],name,{type:'text/markdown'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+document.getElementById('exportDay').onclick=()=>shareMarkdown(dayMarkdown(key()),`daily-rhythm-${key()}.md`);
+document.getElementById('exportHistory').onclick=()=>shareMarkdown(historyMarkdown(),`daily-rhythm-history-${key()}.md`);
+
 document.getElementById('reset').onclick=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
 render();
