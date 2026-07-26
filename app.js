@@ -98,4 +98,5 @@ document.getElementById('exportDay').onclick=()=>shareMarkdown(dayMarkdown(key()
 document.getElementById('exportHistory').onclick=()=>shareMarkdown(historyMarkdown(),`daily-rhythm-history-${key()}.md`);
 
 document.getElementById('reset').onclick=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 render();
