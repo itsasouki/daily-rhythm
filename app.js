@@ -120,6 +120,6 @@ document.getElementById('authForm').onsubmit=async e=>{e.preventDefault();showSt
 document.getElementById('signOut').onclick=async()=>{await cloud.auth.signOut();cloudUser=null;renderAccount();showStatus('Signed out.')};
 cloud.auth.onAuthStateChange((event,session)=>{cloudUser=session?.user||null;renderAccount();if(cloudUser&&(event==='SIGNED_IN'||event==='INITIAL_SESSION'))setTimeout(mergeCloud,0)});
 
-=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());render()}};
+document.getElementById('reset').onclick=()=>{if(confirm('Clear this day’s rhythm and word?')){setSaved([]);localStorage.removeItem('word:'+key());queueSync();render()}};
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 render();
